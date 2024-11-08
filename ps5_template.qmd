@@ -1,6 +1,6 @@
 ---
-title: "title"
-author: "author"
+title: "PS5"
+author: "Charisma Lambert and Prashanthi Subbiah"
 date: "date"
 format: 
   pdf:
@@ -26,10 +26,10 @@ output:
 ## Submission Steps (10 pts)
 1. This problem set is a paired problem set.
 2. Play paper, scissors, rock to determine who goes first. Call that person *Partner 1*.
-    - Partner 1 (name and cnet ID):
-    - Partner 2 (name and cnet ID):
+    - Partner 1 (name and cnet ID): Charisma Lambert (charisml)
+    - Partner 2 (name and cnet ID): Prashanthi Subbiah ()
 3. Partner 1 will accept the `ps5` and then share the link it creates with their partner. You can only share it with one partner so you will not be able to change it after your partner has accepted. 
-4. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: \*\*\_\_\*\* \*\*\_\_\*\*
+4. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: \*\*CL\*\* \*\*PS\*\*
 5. "I have uploaded the names of anyone else other than my partner and I worked with on the problem set **[here](https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit)**"  (1 point)
 6. Late coins used this pset: \*\*\_\_\*\* Late coins left after submission: \*\*\_\_\*\*
 7. Knit your `ps5.qmd` to an PDF file to make `ps5.pdf`, 
@@ -56,14 +56,130 @@ alt.renderers.enable("png")
 ### 1. Scraping (PARTNER 1)
 
 ```{python}
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
+url = 'https://oig.hhs.gov/fraud/enforcement/' 
+response = requests.get(url)
+soup = BeautifulSoup(response.content, 'lxml')
+
+#print(response)
+#print(soup)
+
+main_nochildren = soup.find_all(lambda t: t.name == 'main' and not
+t.find_all())
+
+# Find all <h2> tags within <main>
+h2_tags = soup.find_all('h2')
+
+# Extract links from <a> tags within each <h2>
+links = []
+for h2 in h2_tags:
+    a_tag = h2.find('a', href=True)
+    if a_tag:
+        links.append(a_tag['href'])
+
+# Print the extracted links
+#print(links)
+
+# Extracting titles of offences corresponding to each link
+links_text = []
+for h2 in h2_tags:
+    a_tag = h2.find('a', href=True)
+    if a_tag:
+        links_text.append(a_tag.text)
+
+#print(links_text)
+
+# Extracting Dates
+# Find all <header> elements
+header_tags = soup.find_all('header')
+
+# Extract text from <span> tags within each <div> inside <header>
+span_texts = []
+for header in header_tags:
+    div_tags = header.find_all('div')
+    for div in div_tags:
+        span_tag = div.find('span')
+        if span_tag:
+            span_texts.append(span_tag.text.strip())
+
+# Print the extracted text
+#for text in span_texts:
+    #print(text)
+
+filtered_texts = span_texts[4:] 
+
+#print(filtered_texts)
+
+# Filtering for Categories
+# Find all <header> elements
+header_tags = soup.find_all('header')
+
+# Extract text from <li> tags within each <ul> inside <div> within <header>
+li_texts = []
+for header in header_tags:
+    div_tags = header.find_all('div')
+    for div in div_tags:
+        ul_tags = div.find_all('ul')
+        for ul in ul_tags:
+            li_tags = ul.find_all('li')
+            for li in li_tags:
+                li_texts.append(li.text.strip())
+
+# Assuming you have a list called `li_texts`
+# Get the last 20 elements
+last_20_texts = li_texts[-20:]
+
+#print(last_20_texts)
+
+# Create a DataFrame from the lists
+df = pd.DataFrame({
+    'Title': links_text,
+    'Date': filtered_texts,
+    'Category': last_20_texts,
+    'Link': links
+})
+
+# Print the DataFrame
+df.head(10)
 ```
 
   
 ### 2. Crawling (PARTNER 1)
 
 ```{python}
+base_url = 'https://oig.hhs.gov'
 
+# This extracts all text from the second <li> tag
+agency_info_list = [] # Add your list of URLs here
+for i in df['Link']:
+    # Specify the URL
+    url = base_url + i
+    
+    # Fetch the page content
+    response = requests.get(url)
+    response.raise_for_status()
+    
+    # Parse the HTML content with Beautiful Soup
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    # Use the CSS selector path to find the element
+    agency_info = soup.select_one('#main-content > div > div:nth-child(2) > article > div > ul > li:nth-child(2)')
+    
+    # Check if the element is found and print its text
+    if agency_info: 
+        agency_info_list.append(agency_info.get_text(strip=True)) 
+    else: 
+        agency_info_list.append("Agency information not found.")
+    
+# Taking out word "Agency:"
+cleaned_agency_info_list = [info.replace("Agency:", "").strip() for info in agency_info_list] 
+
+# Appending 'Enforcement Agency' column to df
+df['Enforcement Agency'] = cleaned_agency_info_list 
+df
 ```
 
 ## Step 2: Making the scraper dynamic
@@ -71,12 +187,43 @@ alt.renderers.enable("png")
 ### 1. Turning the scraper into a function 
 
 * a. Pseudo-Code (PARTNER 2)
+import time 
+from datetime import datetime
 
+function(int(month), int(year)):
+  if year < 2013: 
+    print("The date is invalid. Please retry with a year that is 2013 or later.")
+    return
+  
+  base_url = "https://oig.hhs.gov/fraud/enforcement/"
+  title = []
+  category = []
+  date = []
+  enforcement_agency = []
+
+  start_date = f"{year}-{month}-01"
+  end_date = datetime.today()
+
+  page = 1
+  while True:
+    url = f"{base_url}?page={page}""
+    for blank in blank:
+      scrape page to link 
+      update title
+      update date
+      update categories
+      update link 
+
+      start_date + 1 and <=  end_date
+      time.sleep(1)
+  df = pd.DataFrame({ build dataframe})
+  df.to_csv("enforcement_actions_year_month")
+
+  return df
 
 * b. Create Dynamic Scraper (PARTNER 2)
 
 ```{python}
-
 ```
 
 * c. Test Partner's Code (PARTNER 1)
