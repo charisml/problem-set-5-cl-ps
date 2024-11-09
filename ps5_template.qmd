@@ -332,7 +332,7 @@ print(result_df_2023.head(5))
 
 Creating Dataframe for January 2021 onwards
 ```{python}
-result_df_2021 = scrape_enforcement_actions(2021, 1)
+result_df_2021 = get_enforcement_actions(2021, 1)
 print(result_df_2021.head(5))
 ```
 
