@@ -309,13 +309,15 @@ def get_enforcement_actions(month, year):
 
   return df
   
-get_enforcement_actions(10, 2024)
+get_enforcement_actions(1, 2023)
 
 # Citation: Date scrapper was now including other aspects of the page with the same encoding so I created an if/else that continued to have errors. I entered the if/else into ChatGPT and it suggested try-except. Logic within is my own, just replaced if/else with try and except.
 
 # Citation:  Searched how to turn string date into datetime object with YYYY-MM-DD format and found stackoverflow thread that used the syntax used in this section for date conversion. 
 
 ```
+
+I got X enforcement actions in my dataframe. The earliest enforcement action is ______ on _______ day.
 
 * c. Test Partner's Code (PARTNER 1)
 
