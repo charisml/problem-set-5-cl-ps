@@ -227,7 +227,8 @@ def get_enforcement_actions(month, year):
     print("The date is invalid. Please retry with a year that is 2013 or later.")
     return
 
-  base_url = "https://oig.hhs.gov/fraud/enforcement/"
+  base_url = "https://oig.hhs.gov/fraud/enforcement/?page="
+  page = 1
 
   current_date = datetime.today()
   start_date = datetime(year, month, 1)
@@ -238,8 +239,9 @@ def get_enforcement_actions(month, year):
   categories = []
 
   page = 1
-  while start_date <= current_date:
-    response = requests.get(base_url)
+  while True:
+    url = base_url + f"{page}"
+    response = requests.get(url)
     soup = BeautifulSoup(response.content, 'lxml')
 
     main_nochildren = soup.find_all(lambda t: t.name == 'main' and not t.find_all())
@@ -264,7 +266,10 @@ def get_enforcement_actions(month, year):
         if span_tag:
             dates.append(span_tag.text.strip())
 
+    dates = [datetime.strptime(date, "%B %d, %Y").strftime("%Y-%m-%d") for date in dates]
+
     filtered_texts = dates[4:] 
+  
 
     for header in header_tags:
       div_tags = header.find_all('div')
@@ -283,6 +288,9 @@ def get_enforcement_actions(month, year):
     else: 
       start_date = datetime(start_date.year, start_date.month + 1, 1)
 
+    page += 1
+
+
   df = pd.DataFrame({
     'Title': title,
     'Date': filtered_texts,
@@ -294,7 +302,8 @@ def get_enforcement_actions(month, year):
   df.to_csv(csv_name)
 
   return df
-
+  
+get_enforcement_actions(10, 2024)
 
 ```
 
