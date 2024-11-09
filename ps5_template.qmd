@@ -90,7 +90,7 @@ for h2 in h2_tags:
     if a_tag:
         links_text.append(a_tag.text)
 
-#print(links_text)
+#print(links_text) - commented out after checking
 
 # Extracting Dates
 # Find all <header> elements
@@ -106,12 +106,9 @@ for header in header_tags:
             span_texts.append(span_tag.text.strip())
 
 # Print the extracted text
-#for text in span_texts:
-    #print(text)
-
 filtered_texts = span_texts[4:] 
 
-#print(filtered_texts)
+#print(filtered_texts) - commented out after checking
 
 # Filtering for Categories
 # Find all <header> elements
@@ -132,7 +129,7 @@ for header in header_tags:
 # Get the last 20 elements
 last_20_texts = li_texts[-20:]
 
-#print(last_20_texts)
+#print(last_20_texts) - commented out after checking
 
 # Create a DataFrame from the lists
 df = pd.DataFrame({
@@ -143,7 +140,9 @@ df = pd.DataFrame({
 })
 
 # Print the DataFrame
-df.head(10)
+print(df.head(10))
+
+# BingChat Query: How do I filter for an <a> tag in an <h2> tag?
 ```
 
   
@@ -179,7 +178,11 @@ cleaned_agency_info_list = [info.replace("Agency:", "").strip() for info in agen
 
 # Appending 'Enforcement Agency' column to df
 df['Enforcement Agency'] = cleaned_agency_info_list 
-df
+print(df.head(10))
+
+# BingChat Query: How do I filter for a <li> tag, which has a nested <span> tag that has the text "Agency:" in it?
+
+# Here is the XPath: '#main-content > div > div:nth-child(2) > article > div > ul > li:nth-child(2)'
 ```
 
 ## Step 2: Making the scraper dynamic
@@ -220,96 +223,95 @@ function(int(month), int(year)):
 * b. Create Dynamic Scraper (PARTNER 2)
 
 ```{python}
-from datetime import datetime 
-
-def get_enforcement_actions(month, year):
-  if year < 2013:
-    print("The date is invalid. Please retry with a year that is 2013 or later.")
-    return
-
-  base_url = "https://oig.hhs.gov/fraud/enforcement/?page="
-  page = 1
-
-  current_date = datetime.today()
-  start_date = datetime(year, month, 1)
-
-  title = []
-  dates = []
-  links = []
-  categories = []
-
-  page = 1
-  while True:
-    url = base_url + f"{page}"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'lxml')
-
-    main_nochildren = soup.find_all(lambda t: t.name == 'main' and not t.find_all())
-
-    h2_tags = soup.find_all('h2')
-
-    # Extract links from <a> tags within each <h2>
-    for h2 in h2_tags:
-      a_tag = h2.find('a', href=True)
-      if a_tag:
-        links.append(a_tag['href'])
-
-    for h2 in h2_tags:
-      a_tag = h2.find('a', href=True)
-      if a_tag:
-        title.append(a_tag.text)
-
-    for header in header_tags:
-      div_tags = header.find_all('div')
-      for div in div_tags:
-        span_tag = div.find('span')
-        if span_tag:
-            dates.append(span_tag.text.strip())
-
-    updated_dates = []
-    for date in dates:
-      try:
-        date = datetime.strptime(date, "%B %d, %Y").strftime
-        updated_dates.append(date)
-      except ValueError:
-        pass
-
-    filtered_texts = updated_dates[4:] 
+from datetime import datetime
+import pandas as pd
+import time
+import altair as alt
+import warnings 
+warnings.filterwarnings('ignore')
+alt.renderers.enable("png")
+import requests
+from bs4 import BeautifulSoup
 
 
-    for header in header_tags:
-      div_tags = header.find_all('div')
-      for div in div_tags:
-        ul_tags = div.find_all('ul')
-        for ul in ul_tags:
-          li_tags = ul.find_all('li')
-          for li in li_tags:
-            categories.append(li.text.strip())
+def get_enforcement_actions(year, month):
+    if year < 2013:
+        print("Please input a year >= 2013. Only enforcement actions after 2013 are listed.")
+        return None
+    
+    base_url = "https://oig.hhs.gov/fraud/enforcement/"
+    page = 1  # Start from page 1
+    
+    titles, dates, categories, links, agencies = [], [], [], [], []
+    target_date = datetime(year, month, 1).date()
+    
+    while True:
+        # Construct the URL dynamically based on the current page
+        if page == 1:
+            current_url = base_url  # First page doesn't have ?page=1
+        else:
+            current_url = f"{base_url}?page={page}"
 
-    last_20_texts = categories[-20:]
-    time.sleep(1)
+        #print(f"Currently scraping: {current_url}") - commented out 
+        response = requests.get(current_url)
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # Find all enforcement action cards on the current page
+        li_us_card = soup.find_all("li", class_="usa-card card--list pep-card--minimal mobile:grid-col-12")
+        
+        # If no cards are found on the page, stop scraping (end of pages)
+        if not li_us_card:
+            print(f"No more entries found on page {page}. Stopping.")
+            break
+        
+        # Scrape data from each card
+        for li in li_us_card:
+            date_str = li.find(class_="text-base-dark padding-right-105").get_text(strip=True)
+            entry_date = datetime.strptime(date_str, "%B %d, %Y").date()
+            
+            if entry_date >= target_date:
+                title = li.find("h2", class_="usa-card__heading").find("a").get_text(strip=True)
+                category = li.find("ul", class_="display-inline add-list-reset").find("li").get_text(strip=True)
+                link = base_url + li.find("a")["href"]
+                
+                titles.append(title)
+                dates.append(date_str)
+                categories.append(category)
+                links.append(link)
+                
+                # Crawl individual action page for agency
+                action_response = requests.get(link)
+                action_soup = BeautifulSoup(action_response.text, "html.parser")
+                agency_ul = action_soup.find("ul", class_="usa-list usa-list--unstyled margin-y-2")
+                if agency_ul and len(agency_ul.find_all("li")) > 1:
+                    agency = agency_ul.find_all("li")[1].get_text(strip=True).replace("Agency:", "").strip()
+                else:
+                    agency = "N/A"
+                agencies.append(agency)
+            else:
+                # If we've reached an entry older than the target date, stop scraping
+                return pd.DataFrame({
+                    "Title of Enforcement Action": titles,
+                    "Date": dates,
+                    "Category": categories,
+                    "Link": links,
+                    "Agency": agencies
+                })
+        
+        # Increment the page counter to move to the next page
+        page += 1
+        
+        # Add a delay between requests to avoid overloading the server
+        time.sleep(0.2)
 
-    if start_date.month == 12:
-      start_date = datetime(start_date.year + 1, 1, 1)
-    else: 
-      start_date = datetime(start_date.year, start_date.month + 1, 1)
-
-    page += 1
-
-
-  df = pd.DataFrame({
-    'Title': title,
-    'Date': filtered_texts,
-    'Category': last_20_texts,
-    'Link': links
-  })
-
-  csv_name = f"enforcement_actions_{year}_{month}"
-  df.to_csv(csv_name)
-
-  return df
-  
-get_enforcement_actions(1, 2023)
+    # If we've gone through all pages without finding an older entry
+    return pd.DataFrame({
+        "Title of Enforcement Action": titles,
+        "Date": dates,
+        "Category": categories,
+        "Link": links,
+        "Agency": agencies
+    })
 
 # Citation: Date scrapper was now including other aspects of the page with the same encoding so I created an if/else that continued to have errors. I entered the if/else into ChatGPT and it suggested try-except. Logic within is my own, just replaced if/else with try and except.
 
@@ -319,10 +321,19 @@ get_enforcement_actions(1, 2023)
 
 I got X enforcement actions in my dataframe. The earliest enforcement action is ______ on _______ day.
 
-* c. Test Partner's Code (PARTNER 1)
+Creating Dataframe for January 2023 onwards
 
 ```{python}
+result_df_2023 = get_enforcement_actions(2023, 1)
+print(result_df_2023.head(5))
+```
 
+* c. Test Partner's Code (PARTNER 1)
+
+Creating Dataframe for January 2021 onwards
+```{python}
+result_df_2021 = scrape_enforcement_actions(2021, 1)
+print(result_df_2021.head(5))
 ```
 
 ## Step 3: Plot data based on scraped data
