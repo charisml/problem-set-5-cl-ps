@@ -294,44 +294,49 @@ def get_enforcement_actions(year, month):
             categories.append("No category found.")
 
         # create df of titles, category, link, and date
-        df = pd.DataFrame({
+        main_df = pd.DataFrame({
             'Title' : titles,
             'Category': last_20_categories,
             'Link': links,
             'Date': filtered_dates,
         })
 
-        # getting agency names from direct links
-        base_url = 'https://oig.hhs.gov'
-        agency_info_list = [] 
-        for link in df['Link']:
-            agency_url = base_url + link
-            # Fetch the page content
-            response = requests.get(agency_url)
-        
-            # Parse the HTML content with Beautiful Soup
-            soup = BeautifulSoup(response.text, 'html.parser')
-    
-            # Use the CSS selector path to find the element
-            agency_info = soup.select_one('#main-content > div > div:nth-child(2) > article > div > ul > li:nth-child(2)')
-    
-            # Check if the element is found and print its text
-            if agency_info: 
-                agency_info_list.append(agency_info.get_text(strip=True)) 
-            else: 
-                agency_info_list.append("Agency information not found.")
-
-        cleaned_agency_info_list = [info.replace("Agency:", "").strip() for info in agency_info_list] 
-
-        df["Enforcement Agency"] = cleaned_agency_info_list 
+        if page == 1:
+            df = main_df
+        else:
+            df = pd.concat([df, main_df], ignore_index = True)
 
         page += 1
         time.sleep(0.2)
+        # getting agency names from direct links
+    base_url = 'https://oig.hhs.gov'
+    agency_info_list = [] 
+    for link in df['Link']:
+        agency_url = base_url + link
+        # Fetch the page content
+        response = requests.get(agency_url)
+        
+        # Parse the HTML content with Beautiful Soup
+        soup = BeautifulSoup(response.text, 'html.parser')
+    
+        # Use the CSS selector path to find the element
+        agency_info = soup.select_one('#main-content > div > div:nth-child(2) > article > div > ul > li:nth-child(2)')
+    
+        # Check if the element is found and print its text
+        if agency_info: 
+            agency_info_list.append(agency_info.get_text(strip=True)) 
+        else: 
+            agency_info_list.append("Agency information not found.")
+
+    cleaned_agency_info_list = [info.replace("Agency:", "").strip() for info in agency_info_list] 
+    df["Enforcement Agency"] = cleaned_agency_info_list 
 
         
 
     csv_name = f"enforcement_actions_{year}_{month}"
     df.to_csv(csv_name, index = False)
+    return df
+
 
 df = get_enforcement_actions(2024, 11)
 len(df)
@@ -350,9 +355,11 @@ Creating Dataframe for January 2023 onwards
 result_df_2023 = get_enforcement_actions(2023, 1)
 length = len(result_df_2023)
 print(result_df_2023.head(5)
-
-print(f"I got back {length} enforcement actions in the dataframe. The earliest enforcement action is ____.")
+print(length)
 ```
+
+I got back {length} enforcement actions in the dataframe.
+The earliest enforcement action is ____ on ____.
 
 * c. Test Partner's Code (PARTNER 1)
 
