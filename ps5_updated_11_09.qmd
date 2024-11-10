@@ -367,11 +367,23 @@ print(result_df_2021.head(5))
 ### 1. Plot the number of enforcement actions over time (PARTNER 2)
 
 ```{python}
-import pandas as pd 
 import altair as alt
 import numpy as np
 
-result_df_2021
+file_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps/output.xlsx"
+result_df_2021 = pd.read_excel(file_path)
+result_df_2021['Date'] = pd.to_datetime(result_df_2021['Date'], format='%B %d, %Y') 
+result_df_2021['month_year'] = result_df_2021['Date'].dt.to_period('M').astype(str)
+
+enforcement_by_month = result_df_2021.groupby("month_year").size().reset_index(name="num_enforcements")
+e_by_month_chart = alt.Chart(enforcement_by_month).mark_line().encode(
+    x = "month_year:O",
+    y = "num_enforcements:Q"
+).properties(
+    title = "Number of Enforcement Actions Over Time",
+    width = 800
+)
+e_by_month_chart.save("enforcements_by_month.html")
 ```
 
 ### 2. Plot the number of enforcement actions categorized: (PARTNER 1)
@@ -379,22 +391,6 @@ result_df_2021
 * based on "Criminal and Civil Actions" vs. "State Enforcement Agencies"
 
 ```{python}
-import pandas as pd 
-import altair as alt
-import numpy as np
-
-# Path to Excel file
-file_path = "C:/Users/prash/OneDrive/Documents/Python II/PSet 5/output.xlsx"
-
-# Read the Excel file into a DataFrame
-result_df_2021 = pd.read_excel(file_path)
-
-# Converting date from "January 1, 2021" to "01-01-2021"
-result_df_2021['Date'] = pd.to_datetime(result_df_2021['Date'], format='%B %d, %Y') 
-
-# Extract month and year and combine them into a single column 
-result_df_2021['Month_Year'] = result_df_2021['Date'].dt.to_period('M').astype(str) 
-
 # Define the conditions
 conditions = [
     result_df_2021['Category'] == 'State Enforcement Agencies',
@@ -438,22 +434,6 @@ line_chart.display()
 * based on five topics
 
 ```{python}
-import pandas as pd 
-import altair as alt
-import numpy as np
-
-# Path to your Excel file
-file_path = "C:/Users/prash/OneDrive/Documents/Python II/PSet 5/output.xlsx"
-
-# Read the Excel file into a DataFrame
-result_df_2021 = pd.read_excel(file_path)
-
-# Converting date from "January 1, 2021" to "01-01-2021"
-result_df_2021['Date'] = pd.to_datetime(result_df_2021['Date'], format='%B %d, %Y') 
-
-# Extract month and year and combine them into a single column 
-result_df_2021['Month_Year'] = result_df_2021['Date'].dt.to_period('M').astype(str)
-
 # Define the conditions
 conditions = [
     result_df_2021['Category'] == 'State Enforcement Agencies',
