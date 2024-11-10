@@ -258,14 +258,14 @@ def get_enforcement_actions(year, month):
                 titles.append("No title found.")
                 links.append("No link found.")
 
-
+        print(links)
+        print(titles)
         # getting dates
         header_tags = soup.find_all('header')
         for header in header_tags:
             div_tags = header.find_all('div')
             for div in div_tags:
                 span_tag = div.find('span', class_="text-base-dark padding-right-105")
-                print(span_tag)
                 if span_tag and span_tag.text.strip():
                     dates.append(span_tag.text.strip())
                 else:
@@ -280,21 +280,22 @@ def get_enforcement_actions(year, month):
                 pass
 
         filtered_dates = [date for date in updated_dates if date != "Invalid date"]
-
+        print(filtered_dates)
         # getting categories
         for header in header_tags:
             div_tags = header.find_all('div')
             for div in div_tags:
                 ul_tags = div.find_all('ul')
                 for ul in ul_tags:
-                    li_tags = ul.find_all('li')
+                    li_tags = ul.find_all('li', class_="display-inline-block usa-tag text-no-lowercase text-base-darkest bg-base-lightest margin-right-1")
+                    print(li_tags)
                     for li in li_tags:
                         categories.append(li.text.strip())
 
         last_20_categories = categories[-20:]
         while len(categories) < len(titles):
             categories.append("No category found.")
-
+        print(categories)
         print(f"Lengths of lists: titles={len(titles)}, categories={len(last_20_categories)}, links={len(links)}, dates={len(filtered_dates)}")
 
 
