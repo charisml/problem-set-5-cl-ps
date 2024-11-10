@@ -572,6 +572,15 @@ plt.show()
 ### 2. Map by District (PARTNER 2)
 
 ```{python}
+import geopandas as gdp
+file_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps/output.xlsx"
+result_df_2021 = pd.read_excel(file_path)
+result_df_2021["District"] = result_df_2021["Agency"].str.extract(r"(District of *)")
+result_df_2021["District"] = result_df_2021["District"].str.strip()
+
+district_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps"
+districts = pd.read_csv("districtpath")
+merged_district_df = districts.merge(result_df_2021, how ="left", left_on = "District", right_on = "Judicial District")
 
 ```
 
