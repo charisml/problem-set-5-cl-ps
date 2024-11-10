@@ -239,11 +239,15 @@ def get_enforcement_actions(year, month):
 
     titles, dates, links, categories = [], [], [], []
 
-    base_url = "https://oig.hhs.gov/fraud/enforcement/?page="
+    base_url = "https://oig.hhs.gov/fraud/enforcement/"
     page = 1
     
     while start_date <= today: 
-        url = base_url + f"{page}"
+        if page == 1: 
+            url = base_url
+        else:   
+            url = base_url + f"?page={page}"
+
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'lxml')
 
@@ -298,13 +302,12 @@ def get_enforcement_actions(year, month):
         print(categories)
         print(f"Lengths of lists: titles={len(titles)}, categories={len(categories)}, links={len(links)}, dates={len(filtered_dates)}")
 
-
         # create df of titles, category, link, and date
         main_df = pd.DataFrame({
             'Title' : titles,
-            'Category': categories,
+            'Category': [", ".join(cat) for cat in categories],
             'Link': links,
-            'Date': filtered_dates,
+            'Date': dates,
         })
 
         if page == 1:
@@ -330,13 +333,14 @@ def get_enforcement_actions(year, month):
     
         # Check if the element is found and print its text
         if agency_info: 
-            agency_info_list.append(agency_info.get_text(strip=True)) 
+            agency_info_list.append(agency_info.get_text(strip=True).replace("Agency:", "").strip())
         else: 
             agency_info_list.append("Agency information not found.")
 
-    cleaned_agency_info_list = [info.replace("Agency:", "").strip() for info in agency_info_list] 
+    
     df["Enforcement Agency"] = cleaned_agency_info_list 
 
+    #Save to CSV
     csv_name = f"enforcement_actions_{year}_{month}"
     df.to_csv(csv_name, index = False)
     return df
