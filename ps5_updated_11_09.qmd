@@ -572,10 +572,6 @@ plt.show()
 ### 2. Map by District (PARTNER 2)
 
 ```{python}
-import geopandas as gdp
-district_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps"
-districts = pd.read_csv("districtpath")
-
 
 ```
 
