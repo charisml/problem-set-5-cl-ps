@@ -371,6 +371,9 @@ result_df_2021 = get_enforcement_actions(2021, 1)
 print(result_df_2021.head(5))
 ```
 
+I got back {length} enforcement actions in the dataframe.
+The earliest enforcement action is ____ on ____.
+
 ## Step 3: Plot data based on scraped data
 
 ### 1. Plot the number of enforcement actions over time (PARTNER 2)
