@@ -580,6 +580,7 @@ result_df_2021["District"] = result_df_2021["District"].str.strip()
 
 merged_district_df = districts.merge(enforcement_by_month, how ="left", left_on = "District", right_on = "Judicial District")
 merged_district_df.plot(column="num_enforcements", legend = True).set_axis_off()
+merged_district_df
 ```
 
 ## Extra Credit
