@@ -223,6 +223,7 @@ function(int(month), int(year)):
 * b. Create Dynamic Scraper (PARTNER 2)
 
 ```{python}
+#| eval: false
 from bs4 import BeautifulSoup
 import requests
 from datetime import datetime 
@@ -349,14 +350,18 @@ def get_enforcement_actions(year, month):
 
 ```
 
-
+Citation: Received help from Ashirwad Wakade (mentioned in Google Form) to run function to extract dataframes for actions since January 2023 and for actions since January 2021, as our function took too long to run on our systems. Code for the function in Step 2 and 3 in this qmd is our own. 
 
 Creating Dataframe for January 2023 onwards
 
 ```{python}
+#| eval: false
+result_df_2023 = get_enforcement_actions(2023, 1)
+```
+
+```{python}
 result_df_2023 = get_enforcement_actions(2023, 1)
 length = len(result_df_2023)
-print(result_df_2023.head(5))
 print(length)
 ```
 
@@ -366,12 +371,26 @@ The earliest enforcement action is ____ on ____.
 * c. Test Partner's Code (PARTNER 1)
 
 Creating Dataframe for January 2021 onwards
+
 ```{python}
+#| eval: false
 result_df_2021 = get_enforcement_actions(2021, 1)
-print(result_df_2021.head(5))
 ```
 
-I got back {length} enforcement actions in the dataframe.
+```{python}
+# Importing as Excel as our function was taking too long when knitting
+import pandas as pd 
+import altair as alt
+import numpy as np
+file_path = "C:/Users/prash/OneDrive/Documents/Python II/PSet 5/enforcement_actions_2021_1.csv"
+
+# Read the Excel file into a DataFrame
+result_df_2021 = pd.read_csv(file_path)
+length = len(result_df_2021)
+print(length)
+```
+
+I got back 3022 enforcement actions in the dataframe.
 The earliest enforcement action is ____ on ____.
 
 ## Step 3: Plot data based on scraped data
@@ -408,17 +427,17 @@ import pandas as pd
 import altair as alt
 import numpy as np
 
-# Path to your Excel file
-file_path = "C:/Users/prash/OneDrive/Documents/Python II/PSet 5/output.xlsx"
+# Path to Excel file
+file_path = "C:/Users/prash/OneDrive/Documents/Python II/PSet 5/enforcement_actions_2021_1.csv"
 
 # Read the Excel file into a DataFrame
-result_df_2021 = pd.read_excel(file_path)
+result_df_2021 = pd.read_csv(file_path)
 
 # Converting date from "January 1, 2021" to "01-01-2021"
 result_df_2021['Date'] = pd.to_datetime(result_df_2021['Date'], format='%B %d, %Y') 
 
 # Extract month and year and combine them into a single column 
-result_df_2021['Month_Year'] = result_df_2021['Date'].dt.to_period('M').astype(str)
+result_df_2021['Month_Year'] = result_df_2021['Date'].dt.to_period('M').astype(str) 
 
 # Define the conditions
 conditions = [
@@ -440,7 +459,7 @@ result_df_2021
 
 
 # Dataframe grouping by Month_Year and Category to summarize Number of Enforcement Actions
-count_2021_category = result_df_2021.groupby(['Category_New', 'Month_Year']).agg(Count =('Title of Enforcement Action', 'count')).reset_index()
+count_2021_category = result_df_2021.groupby(['Category_New', 'Month_Year']).agg(Count =('Title', 'count')).reset_index()
 
 # Filter out the "Other" category
 filtered_df = count_2021_category[count_2021_category['Category_New'] != 'Other']
