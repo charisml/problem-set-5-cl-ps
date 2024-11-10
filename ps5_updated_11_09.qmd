@@ -609,6 +609,7 @@ plt.show()
 
 ```{python}
 import geopandas as gpd
+
 file_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps"
 districts_path = os.path.join(base_path, "US_Attorney_Districts_Shapefile_simplified_20241109.csv")
 districts = gpd.read_file(districts_path)
@@ -619,26 +620,26 @@ df_2021 = pd.read_csv(df_2021_path)
 # change column name to District
 districts.rename(columns={"Judicial District": "District"}, inplace=True)
 df_2021.rename(columns={"Agency": "District"}, inplace=True)
-print(districts.columns)
-
 
 # only keep district/agency name with District of in it
 df_2021["District"] = df_2021["District"].str.extract(r"(District of. *)")
 df_2021["District"] = df_2021["District"].str.strip()
 
 # merge dataframes 
-merged_district_df = districts.merge(df_2021, how ="left", on = "District")
+merged_district_df = districts.merge(df_2021, how ="left", left_on = "District", right_on = "District")
 
 # update date to datetime object and group by district to count num_enforcements
 enforcement_by_district = merged_district_df.groupby("District").size().reset_index(name="num_enforcements")
 
 district_enforcement_count = districts.merge(enforcement_by_district, how= "left", on ="District" )
-print(district_enforcement_count.columns)
 
 # convert to Geo dataframe 
 district_enforcement_count = gpd.GeoDataFrame(district_enforcement_count, geometry = "the_geom")
 district_enforcement_count = district_enforcement_count[["District", "num_enforcements", "the_geom"]]
-district_enforcement_count.set_crs("EPSG:4326", input = True)
+district_enforcement_count.set_crs("EPSG:4326", inplace = True)
+enforcement_by_district = merged_district_df.groupby("District").size().reset_index(name="num_enforcements")
+
+district_enforcement_count = districts.merge(enforcement_by_district, how= "left", on ="District" )
 
 # plot choropleth map
 district_enforcement_count.plot(column = "num_enforcements", legend = True).set_axis_off()
