@@ -248,18 +248,17 @@ def get_enforcement_actions(year, month):
         soup = BeautifulSoup(response.content, 'lxml')
 
         # getting titles and links 
-        h2_tags = soup.find_all('h2')
+        h2_tags = soup.find_all('h2', class_="usa-card__heading")
         for h2 in h2_tags:
             a_tag = h2.find('a', href=True)
             if a_tag:
-                titles.append(a_tag.text)
                 links.append(a_tag['href'])
+                titles.append(a_tag.get_text(strip=True))
             else:
+                links.append("No link found")
                 titles.append("No title found.")
-                links.append("No link found.")
 
-        print(links)
-        print(titles)
+        
         # getting dates
         header_tags = soup.find_all('header')
         for header in header_tags:
@@ -280,7 +279,8 @@ def get_enforcement_actions(year, month):
                 pass
 
         filtered_dates = [date for date in updated_dates if date != "Invalid date"]
-        print(filtered_dates)
+
+
         # getting categories
         for header in header_tags:
             div_tags = header.find_all('div')
@@ -288,21 +288,21 @@ def get_enforcement_actions(year, month):
                 ul_tags = div.find_all('ul')
                 for ul in ul_tags:
                     li_tags = ul.find_all('li', class_="display-inline-block usa-tag text-no-lowercase text-base-darkest bg-base-lightest margin-right-1")
-                    print(li_tags)
                     for li in li_tags:
                         categories.append(li.text.strip())
+                        
 
-        last_20_categories = categories[-20:]
-        while len(categories) < len(titles):
-            categories.append("No category found.")
+        #last_20_categories = categories[-20:]
+        #while len(categories) < len(titles):
+            #categories.append("No category found.")
         print(categories)
-        print(f"Lengths of lists: titles={len(titles)}, categories={len(last_20_categories)}, links={len(links)}, dates={len(filtered_dates)}")
+        print(f"Lengths of lists: titles={len(titles)}, categories={len(categories)}, links={len(links)}, dates={len(filtered_dates)}")
 
 
         # create df of titles, category, link, and date
         main_df = pd.DataFrame({
             'Title' : titles,
-            'Category': last_20_categories,
+            'Category': categories,
             'Link': links,
             'Date': filtered_dates,
         })
@@ -336,8 +336,6 @@ def get_enforcement_actions(year, month):
 
     cleaned_agency_info_list = [info.replace("Agency:", "").strip() for info in agency_info_list] 
     df["Enforcement Agency"] = cleaned_agency_info_list 
-    print(df)
-        
 
     csv_name = f"enforcement_actions_{year}_{month}"
     df.to_csv(csv_name, index = False)
