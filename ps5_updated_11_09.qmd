@@ -297,9 +297,7 @@ def get_enforcement_actions(year, month):
                         
 
         #last_20_categories = categories[-20:]
-        #while len(categories) < len(titles):
-            #categories.append("No category found.")
-        print(categories)
+        categories = categories[:len(titles)]
         print(f"Lengths of lists: titles={len(titles)}, categories={len(categories)}, links={len(links)}, dates={len(filtered_dates)}")
 
         # create df of titles, category, link, and date
