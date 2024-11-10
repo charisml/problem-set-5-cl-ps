@@ -337,7 +337,7 @@ def get_enforcement_actions(year, month):
             agency_info_list.append("Agency information not found.")
 
     
-    df["Enforcement Agency"] = cleaned_agency_info_list 
+    df["Agency"] = cleaned_agency_info_list 
 
     #Save to CSV
     csv_name = f"enforcement_actions_{year}_{month}"
@@ -358,6 +358,7 @@ Creating Dataframe for January 2023 onwards
 #| eval: false
 result_df_2023 = get_enforcement_actions(2023, 1)
 ```
+
 
 ```{python}
 result_df_2023 = get_enforcement_actions(2023, 1)
@@ -398,16 +399,20 @@ The earliest enforcement action is ____ on ____.
 ### 1. Plot the number of enforcement actions over time (PARTNER 2)
 
 ```{python}
+import os
 import pandas as pd 
 import altair as alt
 import numpy as np
 
-file_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps/output.xlsx"
-result_df_2021 = pd.read_excel(file_path)
+base_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps"
+df_2021_path = os.path.join(base_path, "enforcement_actions_2021_1.csv")
+result_df_2021 = pd.read_csv(df_2021_path)
+
 result_df_2021['Date'] = pd.to_datetime(result_df_2021['Date'], format='%B %d, %Y') 
 result_df_2021['month_year'] = result_df_2021['Date'].dt.to_period('M').astype(str)
 
 enforcement_by_month = result_df_2021.groupby("month_year").size().reset_index(name="num_enforcements")
+print(enforcement_by_month.columns)
 e_by_month_chart = alt.Chart(enforcement_by_month).mark_line().encode(
     x = "month_year:O",
     y = "num_enforcements:Q"
@@ -415,7 +420,7 @@ e_by_month_chart = alt.Chart(enforcement_by_month).mark_line().encode(
     title = "Number of Enforcement Actions Over Time",
     width = 800
 )
-e_by_month_chart.save("enforcements_by_month.html")
+e_by_month_chart
 ```
 
 ### 2. Plot the number of enforcement actions categorized: (PARTNER 1)
@@ -603,15 +608,40 @@ plt.show()
 ### 2. Map by District (PARTNER 2)
 
 ```{python}
-import geopandas as gdp
-file_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps/output.xlsx"
-result_df_2021 = pd.read_excel(file_path)
-result_df_2021["District"] = result_df_2021["Agency"].str.extract(r"(District of *)")
-result_df_2021["District"] = result_df_2021["District"].str.strip()
+import geopandas as gpd
+file_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps"
+districts_path = os.path.join(base_path, "US_Attorney_Districts_Shapefile_simplified_20241109.csv")
+districts = pd.read_csv(districts_path)
 
-merged_district_df = districts.merge(enforcement_by_month, how ="left", left_on = "District", right_on = "Judicial District")
-merged_district_df.plot(column="num_enforcements", legend = True).set_axis_off()
-merged_district_df
+df_2021_path = os.path.join(base_path, "enforcement_actions_2021_1.csv")
+df_2021 = pd.read_csv(df_2021_path)
+
+# change column name to District
+districts.rename(columns={"Judicial District ": "District"}, inplace=True)
+df_2021.rename(columns={"Agency": "District"}, inplace=True)
+
+# only keep district/agency name with District of in it
+df_2021["District"] = df_2021["District"].str.extract(r"(District of. *)")
+df_2021["District"] = df_2021["District"].str.strip()
+
+# merge dataframes 
+merged_district_df = districts.merge(df_2021, how ="left", on = "District")
+
+# update date to datetime object and group by district to count num_enforcements
+enforcement_by_district = merged_district_df.groupby("District").size().reset_index(name="num_enforcements")
+
+district_enforcement_count = districts.merge(enforcement_by_district, how= "left", on ="District" )
+print(district_enforcement_count.columns)
+
+# convert to Geo dataframe 
+district_enforcement_count = gpd.GeoDataFrame(district_enforcement_count, geometry = "the_geom")
+district_enforcement_count = district_enforcement_count.to_crs("EPSG:4326", input = True)
+
+# plot choropleth map
+district_enforcement_count.plot(column = "num_enforcements", legend = True).set_axis_off()
+
+#Citation: ChatGPT query of how to get certain parts of a string to be identified, it gave back the use of regex, r"()" for finding District of within agency names inside of the df.
+
 ```
 
 ## Extra Credit
