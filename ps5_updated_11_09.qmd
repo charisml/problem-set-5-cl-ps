@@ -546,7 +546,9 @@ zip_file = gdp.read_file(zip_filepath)
 zip_file # NAME just has name of the state
 
 # Create new column called name from Agency that just has the name of the state ("NAME")
-combined_df_2021['NAME'] = combined_df_2021['Agency_Info'].apply(lambda x: x.split('State of ')[1].split(' ')[0])
+combined_df_2021['NAME'] = combined_df_2021['Agency_Info'].apply(lambda x: x.split('State of ')[1].split(' ')[0] if 'State of' in x else None)
+
+combined_df_2021 = combined_df_2021.dropna(subset=['NAME'])
 
 # Grouping Number of Actions by State ("NAME")
 actions_by_state = combined_df_2021.groupby(['NAME']).agg(Count =('Title of Enforcement Action', 'count')).reset_index()
