@@ -251,23 +251,25 @@ def get_enforcement_actions(year, month):
         h2_tags = soup.find_all('h2')
         for h2 in h2_tags:
             a_tag = h2.find('a', href=True)
-        if a_tag:
-            titles.append(a_tag.text)
-            links.append(a_tag['href'])
-        else:
-            titles.append("No title found.")
-            links.append("No links found.")
+            if a_tag:
+                titles.append(a_tag.text)
+                links.append(a_tag['href'])
+            else:
+                titles.append("No title found.")
+                links.append("No link found.")
+
 
         # getting dates
         header_tags = soup.find_all('header')
         for header in header_tags:
             div_tags = header.find_all('div')
-        for div in div_tags:
-            span_tag = div.find('span')
-            if span_tag:
-                dates.append(span_tag.text.strip())
-            else:
-                dates.append("No date found.")
+            for div in div_tags:
+                span_tag = div.find('span', class_="text-base-dark padding-right-105")
+                print(span_tag)
+                if span_tag and span_tag.text.strip():
+                    dates.append(span_tag.text.strip())
+                else:
+                    pass
 
         updated_dates = []
         for date in dates:
@@ -275,9 +277,9 @@ def get_enforcement_actions(year, month):
                 format_change = datetime.strptime(date, "%B %d, %Y").strftime('%Y-%m-%d')
                 updated_dates.append(format_change)
             except ValueError:
-                updated_dates.append("Invalid date")
+                pass
 
-        filtered_dates = updated_dates[4:]
+        filtered_dates = [date for date in updated_dates if date != "Invalid date"]
 
         # getting categories
         for header in header_tags:
@@ -292,6 +294,9 @@ def get_enforcement_actions(year, month):
         last_20_categories = categories[-20:]
         while len(categories) < len(titles):
             categories.append("No category found.")
+
+        print(f"Lengths of lists: titles={len(titles)}, categories={len(last_20_categories)}, links={len(links)}, dates={len(filtered_dates)}")
+
 
         # create df of titles, category, link, and date
         main_df = pd.DataFrame({
@@ -330,16 +335,12 @@ def get_enforcement_actions(year, month):
 
     cleaned_agency_info_list = [info.replace("Agency:", "").strip() for info in agency_info_list] 
     df["Enforcement Agency"] = cleaned_agency_info_list 
-
+    print(df)
         
 
     csv_name = f"enforcement_actions_{year}_{month}"
     df.to_csv(csv_name, index = False)
     return df
-
-
-df = get_enforcement_actions(2024, 11)
-len(df)
 
 # Citation: Date scrapper was now including other aspects of the page with the same encoding so I created an if/else that continued to have errors. I entered the if/else into ChatGPT and it suggested try-except. Logic within is my own, just replaced if/else with try and except.
 
@@ -354,7 +355,7 @@ Creating Dataframe for January 2023 onwards
 ```{python}
 result_df_2023 = get_enforcement_actions(2023, 1)
 length = len(result_df_2023)
-print(result_df_2023.head(5)
+print(result_df_2023.head(5))
 print(length)
 ```
 
