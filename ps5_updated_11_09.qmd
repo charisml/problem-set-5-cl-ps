@@ -578,10 +578,8 @@ result_df_2021 = pd.read_excel(file_path)
 result_df_2021["District"] = result_df_2021["Agency"].str.extract(r"(District of *)")
 result_df_2021["District"] = result_df_2021["District"].str.strip()
 
-district_path = "/Users/charismalambert/Documents/GitHub/problem-set-5-cl-ps"
-districts = pd.read_csv("districtpath")
-merged_district_df = districts.merge(result_df_2021, how ="left", left_on = "District", right_on = "Judicial District")
-
+merged_district_df = districts.merge(enforcement_by_month, how ="left", left_on = "District", right_on = "Judicial District")
+merged_district_df.plot(column="num_enforcements", legend = True).set_axis_off()
 ```
 
 ## Extra Credit
